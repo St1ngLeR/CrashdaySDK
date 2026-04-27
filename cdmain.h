@@ -1121,4 +1121,73 @@ void ShowHUDUpperMessage(const char* text, int color)
 	}
 }
 
+std::unordered_map<std::string, std::string> ParseEventInfo(const std::string& input)
+{
+	std::unordered_map<std::string, std::string> params;
+	std::istringstream iss(input);
+	std::string token;
+
+	while (iss >> token)
+	{
+		size_t pos = token.find('=');
+		if (pos != std::string::npos)
+		{
+			std::string key = token.substr(0, pos);
+			std::string value = token.substr(pos + 1);
+			params[key] = value;
+		}
+	}
+
+	return params;
+}
+
+std::string GetStringEventParam(const std::unordered_map<std::string, std::string>& params,
+	const std::string& key,
+	const std::string& defaultValue = "") {
+	auto it = params.find(key);
+	return (it != params.end()) ? it->second : defaultValue;
+}
+
+int GetIntEventParam(const std::unordered_map<std::string, std::string>& params,
+	const std::string& key,
+	int defaultValue = 0) {
+	auto it = params.find(key);
+	if (it != params.end()) {
+		try {
+			return std::stoi(it->second);
+		}
+		catch (const std::exception& e) {
+			return defaultValue;
+		}
+	}
+	return defaultValue;
+}
+
+bool GetBoolEventParam(const std::unordered_map<std::string, std::string>& params,
+	const std::string& key,
+	bool defaultValue = false) {
+	auto it = params.find(key);
+	if (it != params.end()) {
+		std::string value = it->second;
+		if (value == "1" || value == "true" || value == "yes" || value == "on") {
+			return true;
+		}
+		else if (value == "0" || value == "false" || value == "no" || value == "off") {
+			return false;
+		}
+	}
+	return defaultValue;
+}
+
+void CDWriteString(int addr, std::string str)
+{
+	if (addr)
+	{
+		injector::WriteMemory<int>(addr + 0x8, str.length(), true);
+		injector::WriteMemory<int>(injector::ReadMemory<DWORD>(addr) + 0x4, str.length(), true);
+		injector::WriteMemory<int>(injector::ReadMemory<DWORD>(addr) + 0x8, str.length(), true);
+		WriteString<uint32_t>(injector::ReadMemory<DWORD>(addr) + 0xC, str.c_str(), true);
+	}
+}
+
 #define LOOP_PLAYERS for (int player = 1; player <= GetPlayersCount(); player++)
