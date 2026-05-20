@@ -1125,6 +1125,13 @@ void ShowHUDUpperMessage(const char* text, int color)
 	}
 }
 
+void ShowHUDLowerMessage(const char* text)
+{
+	injector::WriteMemory<float>(GetRaceHandler() + 0x620, 3.f, false);
+	WriteString<uint32_t>(GetRaceHandler() + 0x420, text, false);
+	injector::WriteMemory<int>(GetRaceHandler() + 0x624, 0.f, false);
+}
+
 std::unordered_map<std::string, std::string> ParseEventInfo(const std::string& input)
 {
 	std::unordered_map<std::string, std::string> params;
