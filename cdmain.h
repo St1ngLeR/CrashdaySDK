@@ -342,51 +342,6 @@ void WriteString(uintptr_t address, const char* text, bool vp = true)
 	}
 }
 
-std::string GetAmbEnvSoundFilePath(const std::string& filePath)
-{
-	std::ifstream file(filePath);
-	std::string line;
-	int currentLine = 0;
-
-	if (!file.is_open())
-	{
-		return "";
-	}
-
-	while (std::getline(file, line) && currentLine < 28)
-	{
-		currentLine++;
-	}
-
-	if (currentLine < 28)
-	{
-		return "";
-	}
-
-	if (!line.empty())
-	{
-		size_t commentPos = line.find('#');
-		if (commentPos != std::string::npos)
-		{
-			line = line.substr(0, commentPos);
-		}
-
-		while (!line.empty() && std::isspace(static_cast<unsigned char>(line.back())))
-		{
-			line.pop_back();
-		}
-
-		std::string charsToRemove = "\t\r\n ";
-		while (!line.empty() && charsToRemove.find(line.back()) != std::string::npos)
-		{
-			line.pop_back();
-		}
-	}
-
-	file.close();
-	return line;
-}
-
 float StringToFloat(std::string s)
 {
 	std::replace(s.begin(), s.end(), ',', '.');
@@ -1198,6 +1153,27 @@ void CDWriteString(int addr, std::string str)
 		injector::WriteMemory<int>(injector::ReadMemory<DWORD>(addr) + 0x4, str.length(), true);
 		injector::WriteMemory<int>(injector::ReadMemory<DWORD>(addr) + 0x8, str.length(), true);
 		WriteString<uint32_t>(injector::ReadMemory<DWORD>(addr) + 0xC, str.c_str(), true);
+	}
+}
+
+void AllocString(int addr, std::string str)
+{
+	char** stringPtrPtr = (char**)(addr);
+
+	size_t strLen = str.size();
+	*stringPtrPtr = new char[strLen + 1];
+	strcpy(*stringPtrPtr, str.c_str());
+
+	CDWriteString(addr, str);
+}
+
+void FreeString(int addr)
+{
+	char** stringPtrPtr = (char**)(addr);
+	if (*stringPtrPtr)
+	{
+		delete[] * stringPtrPtr;
+		*stringPtrPtr = nullptr;
 	}
 }
 
