@@ -1156,25 +1156,44 @@ void CDWriteString(int addr, std::string str)
 	}
 }
 
-void AllocString(int addr, std::string str)
+void AllocString(int addr, const std::string& str)
 {
-	char** stringPtrPtr = (char**)(addr);
+	if (!addr)
+		return;
 
-	size_t strLen = str.size();
-	*stringPtrPtr = new char[strLen + 1];
-	strcpy(*stringPtrPtr, str.c_str());
+	DWORD base = injector::ReadMemory<DWORD>(addr);
 
-	CDWriteString(addr, str);
-}
+	if (!base)
+		return;
 
-void FreeString(int addr)
-{
-	char** stringPtrPtr = (char**)(addr);
-	if (*stringPtrPtr)
+	int oldCapacity = injector::ReadMemory<int>(base + 0x8);
+
+	int newLen = (int)str.length();
+
+	if (newLen > oldCapacity)
 	{
-		delete[] * stringPtrPtr;
-		*stringPtrPtr = nullptr;
+		DWORD newMem = (DWORD)new char[newLen + 0x10];
+		memcpy((void*)newMem, (void*)base, 0xC);
+		injector::WriteMemory<DWORD>(addr, newMem, true);
+		base = newMem;
+		injector::WriteMemory<int>(base + 0x8, newLen, true);
 	}
+
+	injector::WriteMemory<int>(addr + 0x8, newLen, true);
+	injector::WriteMemory<int>(base + 0x4, newLen, true);
+	injector::WriteMemory<int>(base + 0x8, newLen, true);
+
+	strcpy((char*)(base + 0xC), str.c_str());
 }
+
+//void FreeString(int addr)
+//{
+//	char** stringPtrPtr = (char**)(addr);
+//	if (*stringPtrPtr)
+//	{
+//		delete[] * stringPtrPtr;
+//		*stringPtrPtr = nullptr;
+//	}
+//}
 
 #define LOOP_PLAYERS for (int player = 1; player <= GetPlayersCount(); player++)
