@@ -804,6 +804,18 @@ bool isGamePaused()
 	return false; // значение по умолчанию (игра не на паузе)
 }
 
+int GetCurOverlayMenu()
+{
+	if (CDRace() != NULL)
+	{
+		DWORD handler = GetRaceHandler();
+		if (handler != 0)
+		{
+			return injector::ReadMemory<BYTE>(handler + 0x734);
+		}
+	}
+}
+
 BYTE GetSpectatorID()
 {
 	if (CDRace() != NULL)
@@ -1059,7 +1071,10 @@ void KickPlayer(int id)
 {
 	__asm
 	{
-		mov eax, ds: [0x7CD0E0]
+		pushad
+		pushfd
+
+		mov eax, ds : [0x7CD0E0]
 		mov edx, id
 		mov ecx, 0x5C8900
 		call ecx
@@ -1067,6 +1082,34 @@ void KickPlayer(int id)
 		mov eax, id
 		mov ecx, 0x55EF90
 		call ecx
+
+		sub byte ptr ds : [0x7A7758], 1
+
+		mov eax, ds : [0x7CD0E0]
+		mov edx, 0x6D53A6
+		mov ecx, 0x7A7758
+		mov ebx, 0x5D08A0
+		call ebx
+
+		mov eax, ds : [0x7A7758]
+		cmp eax, ds : [0x7A775C]
+		jnz falsecond
+		mov ecx, 1
+		mov edx, 0x6D53AD
+		mov eax, ds : [0x7CD0E0]
+		jmp finish
+
+	falsecond:
+		mov edx, 0x6D53AD
+		mov eax, ds : [0x7CD0E0]
+		xor ecx, ecx
+
+	finish:
+		mov ebx, 0x5D08A0
+		call ebx
+
+		popfd
+		popad
 	}
 }
 
