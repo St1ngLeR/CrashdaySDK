@@ -842,6 +842,14 @@ void SetGameMode(CDGameMode gamemode)
 	}
 }
 
+BYTE IsReplayOnly()
+{
+	if (CDRaceInfo != NULL)
+	{
+		return injector::ReadMemory<BYTE>(CDRaceInfo() + 0x14);
+	}
+}
+
 BYTE GetRaceState()
 {
 	if (CDRaceInfo() != NULL)
